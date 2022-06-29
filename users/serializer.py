@@ -24,3 +24,8 @@ class UserSerializer(serializers.Serializer):
         user = User.objects.create_user(**validated_data)
 
         return user
+
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
