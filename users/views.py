@@ -1,7 +1,12 @@
 from rest_framework.views import APIView, Response, status
+
+from rest_framework.authentication import TokenAuthentication
 from .serializer import UserSerializer, UserLoginSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
+from movie.permission import CustomPermission
+
+from .models import User
 
 
 class UserView(APIView):
@@ -36,3 +41,36 @@ class UserLoginView(APIView):
         return Response(
             {"detail": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED
         )
+
+
+class ListUserView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [CustomPermission]
+
+    def get(self, request):
+        try:
+            users = User.objects.all()
+
+            serializer = UserSerializer(users, many=True)
+
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {"message": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class ListUserByIdView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [CustomPermission]
+
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {"message": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
