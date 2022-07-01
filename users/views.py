@@ -1,5 +1,6 @@
+from multiprocessing import set_forkserver_preload
 from rest_framework.views import APIView, Response, status
-
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.authentication import TokenAuthentication
 from .serializer import UserSerializer, UserLoginSerializer
 from rest_framework.authtoken.models import Token
@@ -43,7 +44,7 @@ class UserLoginView(APIView):
         )
 
 
-class ListUserView(APIView):
+class ListUserView(APIView, PageNumberPagination):
     authentication_classes = [TokenAuthentication]
     permission_classes = [CustomPermission]
 
@@ -51,9 +52,11 @@ class ListUserView(APIView):
         try:
             users = User.objects.all()
 
-            serializer = UserSerializer(users, many=True)
+            result_page = self.paginate_queryset(users, request, view=self)
 
-            return Response(serializer.data)
+            serializer = UserSerializer(result_page, many=True)
+
+            return self.get_paginated_response(serializer.data)
         except User.DoesNotExist:
             return Response(
                 {"message": "User not found"}, status=status.HTTP_404_NOT_FOUND

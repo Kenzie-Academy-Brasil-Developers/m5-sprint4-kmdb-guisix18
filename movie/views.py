@@ -1,18 +1,15 @@
 from functools import partial
 from django.shortcuts import render
-
 from rest_framework.views import APIView, Response, status
 from rest_framework.authentication import TokenAuthentication
-
 from movie.models import Movie
-
 from .permission import CustomPermission
-
 from .serializer import MovieSerializer
 from movie import serializer
+from rest_framework.pagination import PageNumberPagination
 
 # Create your views here.
-class MovieView(APIView):
+class MovieView(APIView, PageNumberPagination):
     authentication_classes = [TokenAuthentication]
     permission_classes = [CustomPermission]
 
@@ -30,9 +27,11 @@ class MovieView(APIView):
     def get(self, request):
         movies = Movie.objects.all()
 
-        serializer = MovieSerializer(movies, many=True)
+        result_page = self.paginate_queryset(movies, request, view=self)
 
-        return Response(serializer.data)
+        serializer = MovieSerializer(result_page, many=True)
+
+        return self.get_paginated_response(serializer.data)
 
 
 class MoviewByIDView(APIView):
